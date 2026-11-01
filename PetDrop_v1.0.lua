@@ -1,3 +1,16 @@
+--[[
+	MENU TEMPLATE — только визуал, без логики
+
+	Куда класть: LocalScript в StarterPlayer > StarterPlayerScripts
+	Открыть / закрыть: клавиша CONFIG.ToggleKey (по умолчанию RightShift) или кнопка ✕
+	Ассеты не нужны: всё собрано из Frame + UICorner / UIStroke / UIGradient.
+
+	Как добавлять элементы на страницу вкладки (pages[1], pages[2], ...):
+		Section(page, "Название секции")
+		Toggle(page, ICON.Bolt, "Заголовок", "Описание", true, function(state) end)
+		Dropdown(page, ICON.Cube, "Заголовок", "Описание", function(open) end)
+]]
+
 local Players          = game:GetService("Players")
 local TweenService     = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -18,6 +31,58 @@ local states = {
 local SPEED_VAL = 50
 local FLY_SPEED = 55
 local BUY_DELAY = 0.5
+
+-- ===== CONFIG: загрузка при запуске =====
+local HttpService = game:GetService("HttpService")
+local CONFIG_FILE = "PetDrop_config.json"
+local savedConfig = {}
+local selectedPalette = 1
+local configStatusLabel = nil
+
+local function loadConfig()
+    if type(readfile) ~= "function" then
+        warn("[PetDrop] Executor не поддерживает readfile; используются настройки по умолчанию")
+        return
+    end
+
+    local ok, raw = pcall(readfile, CONFIG_FILE)
+    if not ok or type(raw) ~= "string" or raw == "" then
+        return
+    end
+
+    local decoded, data = pcall(function()
+        return HttpService:JSONDecode(raw)
+    end)
+    if not decoded or type(data) ~= "table" then
+        warn("[PetDrop] Config повреждён или имеет неверный формат")
+        return
+    end
+
+    savedConfig = data
+
+    if type(data.states) == "table" then
+        for key in pairs(states) do
+            if type(data.states[key]) == "boolean" then
+                states[key] = data.states[key]
+            end
+        end
+    end
+
+    if type(data.speed) == "number" then
+        SPEED_VAL = math.clamp(math.floor(data.speed), 1, 500)
+    end
+
+    if type(data.flySpeed) == "number" then
+        FLY_SPEED = math.clamp(math.floor(data.flySpeed), 1, 500)
+    end
+
+    if type(data.palette) == "number" then
+        selectedPalette = math.clamp(math.floor(data.palette), 1, 10)
+    end
+end
+
+loadConfig()
+
 local Remote = game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Request") -- RemoteFunction, используем InvokeServer
 
 local theme = {
@@ -253,6 +318,49 @@ local CONFIG = {
 	BackgroundBlur = true,                    -- размытие мира за меню
 	BlurSize       = 16,
 }
+
+-- ===== CONFIG: сохранение =====
+local function saveConfig()
+    if type(writefile) ~= "function" then
+        local message = "Executor не поддерживает writefile"
+        if configStatusLabel then configStatusLabel.Text = message end
+        warn("[PetDrop] " .. message)
+        return false, message
+    end
+
+    local data = {
+        version = 1,
+        states = states,
+        speed = SPEED_VAL,
+        flySpeed = FLY_SPEED,
+        palette = selectedPalette,
+        collapseKey = CONFIG.CollapseKey.Name,
+    }
+
+    local ok, err = pcall(function()
+        writefile(CONFIG_FILE, HttpService:JSONEncode(data))
+    end)
+
+    if ok then
+        if configStatusLabel then
+            configStatusLabel.Text = "Автосохранение включено · PetDrop_config.json"
+        end
+        return true
+    end
+
+    local message = "Ошибка сохранения: " .. tostring(err)
+    if configStatusLabel then configStatusLabel.Text = message end
+    warn("[PetDrop] " .. message)
+    return false, err
+end
+
+-- Восстанавливаем клавишу сворачивания.
+if type(savedConfig.collapseKey) == "string" then
+    local key = Enum.KeyCode[savedConfig.collapseKey]
+    if key and key ~= Enum.KeyCode.Unknown and key ~= CONFIG.ToggleKey then
+        CONFIG.CollapseKey = key
+    end
+end
 
 -- Текст-заглушки
 local TEXT = {
@@ -517,6 +625,7 @@ local function Toggle(page, iconValue, title, desc, default, callback)
 		if callback then
 			callback(state)
 		end
+		saveConfig()
 	end)
 	return row
 end
@@ -622,6 +731,7 @@ local function ToggleWithSettings(page, iconValue, title, desc, default, setting
 		state = not state
 		renderToggle(true)
 		if callback then callback(state) end
+		saveConfig()
 	end)
 
 	-- кнопка ≡ (три полоски)
@@ -702,6 +812,7 @@ local function ToggleWithSettings(page, iconValue, title, desc, default, setting
 				currentValue = v
 				box.Text = tostring(v)
 				if onSettingChanged then onSettingChanged(v) end
+				saveConfig()
 			end)
 
 			row.Size = UDim2.new(1, 0, 0, ROW_H + 54)
@@ -1171,12 +1282,12 @@ end
 -- 
 -- РЕАЛЬНЫЕ ФУНКЦИИ PET DROP
 Section(pages[1], "СБОР РЕСУРСОВ")
-Toggle(pages[1], ICON.Bolt, "Авто монеты", "Автоматически подбирать монеты", false, function(v) states.coins=v end)
-Toggle(pages[1], ICON.Target, "Авто шестерёнки", "Автоматически подбирать шестерёнки", false, function(v) states.gears=v end)
-Toggle(pages[1], ICON.Shield, "Авто копилка", "Автоматически активировать Piggy Pad", false, function(v) states.piggy=v end)
+Toggle(pages[1], ICON.Bolt, "Авто монеты", "Автоматически подбирать монеты", states.coins, function(v) states.coins=v end)
+Toggle(pages[1], ICON.Target, "Авто шестерёнки", "Автоматически подбирать шестерёнки", states.gears, function(v) states.gears=v end)
+Toggle(pages[1], ICON.Shield, "Авто копилка", "Автоматически активировать Piggy Pad", states.piggy, function(v) states.piggy=v end)
 
 Section(pages[2], "ПЕРЕДВИЖЕНИЕ")
-ToggleWithSettings(pages[2], "≡", "Ускорение", "Заданная скорость передвижения", false,
+ToggleWithSettings(pages[2], "≡", "Ускорение", "Заданная скорость передвижения", states.speed,
     "Скорость", 1, 500, SPEED_VAL,
     function(v)
         states.speed = v
@@ -1187,14 +1298,14 @@ ToggleWithSettings(pages[2], "≡", "Ускорение", "Заданная ск
         if states.speed and hum then hum.WalkSpeed = v end
     end
 )
-Toggle(pages[2], "J", "Бесконечный прыжок", "Повторные прыжки в воздухе", false, function(v) states.inf_jump=v end)
-Toggle(pages[2], "N", "Noclip", "Отключает столкновения персонажа", false, function(v)
+Toggle(pages[2], "J", "Бесконечный прыжок", "Повторные прыжки в воздухе", states.inf_jump, function(v) states.inf_jump=v end)
+Toggle(pages[2], "N", "Noclip", "Отключает столкновения персонажа", states.noclip, function(v)
     states.noclip=v
     if not v and char then
         for _,p in ipairs(char:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide=true end end
     end
 end)
-ToggleWithSettings(pages[2], "≡", "Полёт", "WASD — движение, Space — вверх, Ctrl — вниз", false,
+ToggleWithSettings(pages[2], "≡", "Полёт", "WASD — движение, Space — вверх, Ctrl — вниз", states.fly,
     "Скорость полёта", 1, 500, FLY_SPEED,
     function(v) setFlight(v) end,
     function(v) FLY_SPEED = v end
@@ -1219,16 +1330,17 @@ local function NumberSetting(page,title,desc,initial,onChanged)
         if not value then box.Text=tostring(initial); return end
         value=math.clamp(math.floor(value),1,500)
         initial=value; box.Text=tostring(value); onChanged(value)
+        saveConfig()
     end)
 end
 
 
 Section(pages[3], "АВТОПОКУПКА КАПСУЛ")
-Toggle(pages[3],"B","Basic Capsule","Автоматическая покупка Basic",false,function(v) states.buy_basic=v end)
-Toggle(pages[3],"H","Heavy Capsule","Автоматическая покупка Heavy",false,function(v) states.buy_heavy=v end)
-Toggle(pages[3],"Y","Bouncy Capsule","Автоматическая покупка Bouncy",false,function(v) states.buy_bouncy=v end)
-Toggle(pages[3],"E","Elemental Capsule","Автоматическая покупка Elemental",false,function(v) states.buy_elemental=v end)
-Toggle(pages[3],"U","Unstable Capsule","Автоматическая покупка Unstable",false,function(v) states.buy_unstable=v end)
+Toggle(pages[3],"B","Basic Capsule","Автоматическая покупка Basic",states.buy_basic,function(v) states.buy_basic=v end)
+Toggle(pages[3],"H","Heavy Capsule","Автоматическая покупка Heavy",states.buy_heavy,function(v) states.buy_heavy=v end)
+Toggle(pages[3],"Y","Bouncy Capsule","Автоматическая покупка Bouncy",states.buy_bouncy,function(v) states.buy_bouncy=v end)
+Toggle(pages[3],"E","Elemental Capsule","Автоматическая покупка Elemental",states.buy_elemental,function(v) states.buy_elemental=v end)
+Toggle(pages[3],"U","Unstable Capsule","Автоматическая покупка Unstable",states.buy_unstable,function(v) states.buy_unstable=v end)
 
 Section(pages[4], "НАСТРОЙКИ ИНТЕРФЕЙСА")
 local extrasText=text({
@@ -1250,7 +1362,6 @@ local palettes={
 }
 
 -- Компактный выбор темы: нажми на текущую тему, чтобы раскрыть список.
-local selectedPalette = 1
 local paletteOpen = false
 local paletteHolder = create("Frame", {
     Name="ThemeDropdown",
@@ -1290,7 +1401,8 @@ local paletteArrow = text({
 })
 
 local paletteButtons={}
-local function applyPalette(index)
+local function applyPalette(index, shouldSave)
+    index = math.clamp(math.floor(tonumber(index) or 1), 1, #palettes)
     local palette=palettes[index]
     selectedPalette=index
     selectedPaletteText.Text="Тема: "..palette.name
@@ -1302,6 +1414,9 @@ local function applyPalette(index)
     end
     for i,tab in ipairs(tabs) do
         if i==activeTab then tab.button.BackgroundColor3=palette.color end
+    end
+    if shouldSave ~= false then
+        saveConfig()
     end
 end
 
@@ -1343,6 +1458,9 @@ selectedPaletteButton.Activated:Connect(function()
     }):Play()
 end)
 
+-- Применяем сохранённую тему, не создавая лишнее сохранение при запуске.
+applyPalette(selectedPalette, false)
+
 local bindButton = create("TextButton", {
 	Name = "CollapseKeybind",
 	LayoutOrder = nextOrder(pages[4]),
@@ -1373,6 +1491,49 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	CONFIG.CollapseKey = input.KeyCode
 	bindValue.Text = input.KeyCode.Name
 	waitingForBind = false
+	saveConfig()
+end)
+
+Section(pages[4], "КОНФИГУРАЦИЯ")
+configStatusLabel = text({
+    Parent = pages[4],
+    Size = UDim2.new(1, 0, 0, 36),
+    TextSize = 12,
+    TextWrapped = true,
+    TextColor3 = THEME.SubText,
+    Text = type(readfile) == "function" and type(writefile) == "function"
+        and "Автосохранение включено · PetDrop_config.json"
+        or "Нужны функции readfile и writefile в executor",
+})
+
+local saveConfigButton = create("TextButton", {
+    Name = "SaveConfigButton",
+    LayoutOrder = nextOrder(pages[4]),
+    Size = UDim2.new(1, 0, 0, 46),
+    BackgroundColor3 = WHITE,
+    BackgroundTransparency = 0.91,
+    BorderSizePixel = 0,
+    AutoButtonColor = false,
+    Text = "СОХРАНИТЬ КОНФИГ",
+    TextColor3 = THEME.Text,
+    TextSize = 13,
+    Font = Enum.Font.GothamSemibold,
+    Parent = pages[4],
+}, { corner(12), stroke(0.82, 1) })
+
+saveConfigButton.Activated:Connect(function()
+    local ok, err = saveConfig()
+    if ok then
+        configStatusLabel.Text = "Конфиг сохранён · PetDrop_config.json"
+        tween(saveConfigButton, 0.12, { BackgroundTransparency = 0.82 })
+        task.delay(0.25, function()
+            if saveConfigButton.Parent then
+                tween(saveConfigButton, 0.12, { BackgroundTransparency = 0.91 })
+            end
+        end)
+    else
+        configStatusLabel.Text = "Не удалось сохранить: " .. tostring(err)
+    end
 end)
 
 selectTab(1,true)
