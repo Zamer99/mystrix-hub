@@ -1,4 +1,4 @@
--- MYSTRIX HUB / GLASS ROSE v1.2
+-- MYSTRIX HUB / GLASS ROSE v1.3
 -- Execute this entire file on the client. F4 toggles the window.
 -- Add your scripts to SCRIPTS below. No external UI libraries are used.
 
@@ -10,7 +10,7 @@ local SCRIPTS = {
         Category = "Pet Drop",
         Author = "Zamer99",
         Description = "Твой скрипт для Pet Drop. Открывает отдельное меню с разделами Main, Player, Shop и Settings.",
-        Url = "https://raw.githubusercontent.com/Zamer99/mystrix-hub/main/PetDrop_v1.0.lua",
+        Url = "https://raw.githubusercontent.com/Zamer99/mystrix-hub/main/PetDrop_v1.0.lua?v=mini3",
         GuiName = "PetDropGlassMonochrome",
         -- Prevent the script from waiting forever for a missing game remote.
         RequiredPaths = { { "ReplicatedStorage", "Remotes", "Request" } },
@@ -164,7 +164,7 @@ make("Frame", { Position = UDim2.fromOffset(207, 0), Size = UDim2.new(0, 1, 1, 0
 local logo = label(sidebar, "●", 32, 23, 24, 32, 20)
 logo.Font = Enum.Font.GothamBold
 label(sidebar, "MYSTRIX HUB", 70, 20, 130, 26, 16).Font = Enum.Font.GothamBold
-label(sidebar, "v 1.2", 70, 46, 120, 16, 10, C.Muted)
+label(sidebar, "v 1.3", 70, 46, 120, 16, 10, C.Muted)
 local libraryTab = button(sidebar, "    Скрипты", 14, 82, 182, 46, true)
 local favoriteTab = button(sidebar, "    Избранное", 14, 130, 182, 46)
 local aboutTab = button(sidebar, "    О хабе", 14, 178, 182, 46)
@@ -515,4 +515,4 @@ connect(Input.WindowFocusReleased, function() drag = nil end)
 fit()
 refreshDetails()
 selectTab("all")
-print("[MYSTRIX] Glass Rose v1.2 loaded. F4 to toggle.")
+print("[MYSTRIX] Glass Rose v1.3 loaded. F4 to toggle.")
