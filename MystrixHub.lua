@@ -1,4 +1,4 @@
--- MYSTRIX HUB / GLASS ROSE v1.1
+-- MYSTRIX HUB / GLASS ROSE v1.2
 -- Execute this entire file on the client. F4 toggles the window.
 -- Add your scripts to SCRIPTS below. No external UI libraries are used.
 
@@ -11,6 +11,7 @@ local SCRIPTS = {
         Author = "Zamer99",
         Description = "Твой скрипт для Pet Drop. Открывает отдельное меню с разделами Main, Player, Shop и Settings.",
         Url = "https://raw.githubusercontent.com/Zamer99/mystrix-hub/main/PetDrop_v1.0.lua",
+        GuiName = "PetDropGlassMonochrome",
         -- Prevent the script from waiting forever for a missing game remote.
         RequiredPaths = { { "ReplicatedStorage", "Remotes", "Request" } },
     },
@@ -23,6 +24,47 @@ local Lighting = game:GetService("Lighting")
 local player = Players.LocalPlayer
 assert(player, "[MYSTRIX] Запусти хаб на клиенте.")
 local playerGui = player:WaitForChild("PlayerGui")
+
+local function findMenu(entry)
+    if not entry.GuiName then return nil end
+    local menu = playerGui:FindFirstChild(entry.GuiName)
+    if menu and menu:FindFirstChild("Window") and menu:GetAttribute("MystrixReady") ~= false then
+        return menu
+    end
+end
+
+local function openMenu(menu)
+    local bridge = menu:FindFirstChild("MystrixOpen")
+    if bridge and bridge:IsA("BindableFunction") then
+        local ok, opened = pcall(function() return bridge:Invoke() end)
+        return ok and opened == true
+    end
+    -- Compatibility with PetDrop instances started before the v1.2 integration.
+    local frame = menu:FindFirstChild("Window")
+    if not frame then return false end
+    menu.Enabled = true
+    frame.Visible = true
+    local size = frame:FindFirstChildOfClass("UIScale")
+    if size and size.Scale <= 0 then size.Scale = 1 end
+    for _, name in ipairs({ "MiniMenu", "ReopenMenu" }) do
+        local mini = menu:FindFirstChild(name)
+        if mini then mini.Visible = false end
+    end
+    return true
+end
+
+local function state(record, value, message)
+    record:SetAttribute("Message", message)
+    record.Value = value
+end
+
+local function reconcile(entry, record)
+    if entry.GuiName and record.Value == "started" and not findMenu(entry) then
+        state(record, "idle", "Меню закрыто или отсутствует. Можно запустить снова.")
+    elseif findMenu(entry) and (record.Value == "idle" or record.Value == "error" or record.Value == "unconfirmed") then
+        state(record, "started", "Меню уже создано. Нажми «Открыть меню».")
+    end
+end
 
 local function make(class, properties, parent)
     local object = Instance.new(class)
@@ -122,7 +164,7 @@ make("Frame", { Position = UDim2.fromOffset(207, 0), Size = UDim2.new(0, 1, 1, 0
 local logo = label(sidebar, "●", 32, 23, 24, 32, 20)
 logo.Font = Enum.Font.GothamBold
 label(sidebar, "MYSTRIX HUB", 70, 20, 130, 26, 16).Font = Enum.Font.GothamBold
-label(sidebar, "v 1.1", 70, 46, 120, 16, 10, C.Muted)
+label(sidebar, "v 1.2", 70, 46, 120, 16, 10, C.Muted)
 local libraryTab = button(sidebar, "    Скрипты", 14, 82, 182, 46, true)
 local favoriteTab = button(sidebar, "    Избранное", 14, 130, 182, 46)
 local aboutTab = button(sidebar, "    О хабе", 14, 178, 182, 46)
@@ -229,7 +271,9 @@ local selected = SCRIPTS[1]
 local activeTab, rows, records = "all", {}, {}
 local messages = {
     idle = "Готов к запуску", fetching = "Загрузка с GitHub…", executing = "Скрипт запускается…",
-    started = "Скрипт запущен. Открой его меню.",
+    started = "Меню уже создано. Нажми «Открыть меню».",
+    completed = "Код выполнен; у этого скрипта нет проверки меню.",
+    unconfirmed = "Код завершился, но меню не появилось. Можно повторить запуск.",
     partial = "Ошибка внутри скрипта. Повтор отключён: часть кода могла выполниться.",
 }
 local function refreshDetails()
@@ -244,9 +288,10 @@ local function refreshDetails()
     description.Text = selected.Description
     metadata.Text = selected.Category .. "   /   @" .. selected.Author .. "   /   GitHub"
     status.Text = record:GetAttribute("Message") or messages[record.Value] or messages.idle
-    local canRun = record.Value == "idle" or record.Value == "error"
+    local canOpen = record.Value == "started" and findMenu(selected) ~= nil
+    local canRun = record.Value == "idle" or record.Value == "error" or record.Value == "unconfirmed" or canOpen
     launch.Active = canRun
-    launch.Text = canRun and "ЗАПУСТИТЬ  →" or (record.Value == "started" and "ЗАПУЩЕН  ✓" or "НЕДОСТУПНО")
+    launch.Text = canOpen and "ОТКРЫТЬ МЕНЮ  →" or (canRun and "ЗАПУСТИТЬ  →" or "НЕДОСТУПНО")
     launch.BackgroundTransparency = canRun and 0 or 0.35
     launch:SetAttribute("IdleTransparency", canRun and 0 or 0.35)
     for id, row in pairs(rows) do
@@ -273,6 +318,7 @@ for index, entry in ipairs(SCRIPTS) do
         record = make("StringValue", { Name = entry.Id, Value = "idle" }, session)
     end
     records[entry.Id] = record
+    reconcile(entry, record)
     local card = button(list, "", 0, 0, 500, 52)
     card.Size = UDim2.new(1, 0, 0, 52)
     card.LayoutOrder = index
@@ -291,6 +337,12 @@ for index, entry in ipairs(SCRIPTS) do
     end)
     connect(record.Changed, refreshDetails)
     connect(record:GetAttributeChangedSignal("Message"), refreshDetails)
+    connect(playerGui.ChildRemoved, function(child)
+        if child.Name == entry.GuiName then
+            reconcile(entry, record)
+            refreshDetails()
+        end
+    end)
 end
 local function selectTab(tab)
     activeTab = tab
@@ -310,15 +362,28 @@ connect(favoriteTab.Activated, function() selectTab("favorites") end)
 connect(aboutTab.Activated, function() selectTab("about") end)
 connect(search:GetPropertyChangedSignal("Text"), filter)
 
-local function state(record, value, message)
-    record:SetAttribute("Message", message or messages[value])
-    record.Value = value
+local function restoreHub()
+    if alive then
+        launching = false
+        gui.Enabled = true
+        setOpen(true)
+    end
 end
 connect(launch.Activated, function()
     if not selected then return end
     local entry = selected
     local record = records[entry.Id]
-    if record.Value ~= "idle" and record.Value ~= "error" then return end
+    reconcile(entry, record)
+    local existing = findMenu(entry)
+    if existing and record.Value == "started" then
+        if openMenu(existing) then
+            gui:Destroy()
+        else
+            record:SetAttribute("Message", "Не удалось открыть меню. Попробуй RightShift в PetDrop.")
+        end
+        return
+    end
+    if record.Value ~= "idle" and record.Value ~= "error" and record.Value ~= "unconfirmed" then return end
     if type(loadstring) ~= "function" then
         state(record, "error", "Среда не поддерживает loadstring. Доступен только интерфейс.")
         return
@@ -366,19 +431,33 @@ connect(launch.Activated, function()
         task.delay(15, function()
             if record.Parent and record.Value == "executing" then
                 record:SetAttribute("Message", "Скрипт ещё выполняется. Проверь его меню; повторный запуск заблокирован.")
+                restoreHub()
             end
         end)
         local ran, runtimeError = pcall(chunk)
         if ran then
-            state(record, "started")
-            if alive then gui:Destroy() end
+            local menu = findMenu(entry)
+            if entry.GuiName then
+                -- A successful pcall only means the chunk returned, not that a UI exists.
+                for _ = 1, 50 do
+                    if menu then break end
+                    task.wait(0.1)
+                    menu = findMenu(entry)
+                end
+                if menu and openMenu(menu) then
+                    state(record, "started")
+                    if alive then gui:Destroy() end
+                else
+                    state(record, "unconfirmed")
+                    restoreHub()
+                end
+            else
+                state(record, "completed")
+                if alive then gui:Destroy() end
+            end
         else
             state(record, "partial")
-            if alive then
-                launching = false
-                gui.Enabled = true
-                setOpen(true)
-            end
+            restoreHub()
             warn("[MYSTRIX] " .. tostring(runtimeError))
         end
     end)
@@ -436,4 +515,4 @@ connect(Input.WindowFocusReleased, function() drag = nil end)
 fit()
 refreshDetails()
 selectTab("all")
-print("[MYSTRIX] Glass Rose v1.1 loaded. F4 to toggle.")
+print("[MYSTRIX] Glass Rose v1.2 loaded. F4 to toggle.")
