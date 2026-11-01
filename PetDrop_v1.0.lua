@@ -311,7 +311,7 @@ end
 ----------------------------------------------------------------------
 local CONFIG = {
 	ToggleKey      = Enum.KeyCode.RightShift, -- открыть / закрыть меню
-	CollapseKey    = Enum.KeyCode.LeftControl, -- свернуть / развернуть в мини-меню
+	CollapseKey    = Enum.KeyCode.RightControl, -- свернуть / развернуть в мини-меню
 	StartOpen      = true,                    -- показывать меню при запуске
 	Size           = Vector2.new(760, 460),   -- размер окна (px)
 	SidebarWidth   = 208,                     -- ширина левой панели
@@ -1181,24 +1181,77 @@ reopenButton.MouseLeave:Connect(function()
 	tween(reopenButton, 0.12, { BackgroundTransparency = 0.08 })
 end)
 
--- Мини-меню после сворачивания: нажми, чтобы развернуть окно обратно.
+-- Мини-меню в стиле игровых кнопок: яркий фон, толстая рамка и белая подпись.
 local miniMenuButton = create("TextButton", {
 	Name = "MiniMenu",
 	AnchorPoint = Vector2.new(0.5, 0.5),
-	Position = UDim2.fromScale(0.5, 0.5),
-	Size = UDim2.fromOffset(58, 58),
-	BackgroundColor3 = THEME.Content,
-	BackgroundTransparency = 0.06,
+	Position = UDim2.new(1, -55, 0.5, 180),
+	Size = UDim2.fromOffset(78, 78),
+	BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+	BackgroundTransparency = 0,
 	BorderSizePixel = 0,
 	AutoButtonColor = false,
-	Text = "PD",
-	TextColor3 = THEME.Text,
-	TextSize = 18,
-	Font = Enum.Font.GothamBold,
+	Text = "",
 	Visible = false,
+	ClipsDescendants = false,
 	ZIndex = 30,
 	Parent = gui,
-}, { corner(18), stroke(0.28, 1.5) })
+}, {
+	corner(25),
+	create("UIStroke", {
+		Color = Color3.fromRGB(0, 0, 0), Thickness = 4,
+		ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+	}),
+	create("UIGradient", {
+		Rotation = 70,
+		Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 155, 225)),
+			ColorSequenceKeypoint.new(0.5, Color3.fromRGB(224, 113, 255)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(151, 100, 255)),
+		}),
+	}),
+	create("Frame", {
+		Name = "Shine", Position = UDim2.fromOffset(12, 8),
+		Size = UDim2.fromOffset(43, 7), Rotation = -6,
+		BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+		BackgroundTransparency = 0.45, BorderSizePixel = 0, ZIndex = 32,
+	}, { corner(4) }),
+	create("TextLabel", {
+		Name = "Monogram", AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0.5, -1, 0.5, -5), Size = UDim2.fromOffset(65, 46),
+		BackgroundTransparency = 1, Text = "PD", Rotation = -9,
+		Font = Enum.Font.FredokaOne, TextSize = 38,
+		TextColor3 = Color3.fromRGB(255, 237, 118), ZIndex = 33,
+	}, {
+		create("UIStroke", { Color = Color3.fromRGB(0, 0, 0), Thickness = 3, ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual }),
+	}),
+	create("TextLabel", {
+		Name = "Sparkle", Position = UDim2.fromOffset(53, 12),
+		Size = UDim2.fromOffset(18, 20), BackgroundTransparency = 1,
+		Text = "+", Font = Enum.Font.FredokaOne, TextSize = 24,
+		TextColor3 = Color3.fromRGB(255, 255, 255), ZIndex = 34,
+	}, {
+		create("UIStroke", { Color = Color3.fromRGB(0, 0, 0), Thickness = 1.5, ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual }),
+	}),
+	create("TextLabel", {
+		Name = "Caption", AnchorPoint = Vector2.new(0.5, 1),
+		Position = UDim2.new(0.5, 0, 1, 2), Size = UDim2.fromOffset(92, 27),
+		BackgroundTransparency = 1, Text = "Pet Drop",
+		Font = Enum.Font.FredokaOne, TextSize = 21,
+		TextColor3 = Color3.fromRGB(255, 255, 255), ZIndex = 35,
+	}, {
+		create("UIStroke", { Color = Color3.fromRGB(0, 0, 0), Thickness = 3, ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual }),
+	}),
+})
+do
+	local miniScale = create("UIScale", { Scale = 1, Parent = miniMenuButton })
+	miniMenuButton.MouseEnter:Connect(function()
+		tween(miniScale, 0.12, { Scale = 1.06 })
+	end)
+	miniMenuButton.MouseLeave:Connect(function()
+		tween(miniScale, 0.12, { Scale = 1 })
+	end)
+end
 
 ----------------------------------------------------------------------
 -- ВКЛАДКИ
@@ -1410,7 +1463,9 @@ local function applyPalette(index, shouldSave)
     THEME.TabIdle=palette.color
     extrasText.Text="Выбрана тема: "..palette.name
     for _,item in ipairs(gui:GetDescendants()) do
-        if item:IsA("UIStroke") then item.Color=palette.color end
+        if item:IsA("UIStroke") and not item:IsDescendantOf(miniMenuButton) then
+            item.Color = palette.color
+        end
     end
     for i,tab in ipairs(tabs) do
         if i==activeTab then tab.button.BackgroundColor3=palette.color end
@@ -1615,7 +1670,7 @@ collapseMenu = function()
 	miniMenuButton.Visible = true
 	-- В свернутом режиме размытие мира полностью выключено.
 	if blur then tween(blur, 0.2, { Size = 0 }) end
-	tween(miniMenuButton, 0.16, { BackgroundTransparency = 0.02 })
+	tween(miniMenuButton, 0.16, { BackgroundTransparency = 0 })
 end
 
 local function expandMenu()
@@ -1627,45 +1682,9 @@ local function expandMenu()
 	uiScale.Scale = fit * 0.94
 	tween(uiScale, 0.2, { Scale = fit }, Enum.EasingStyle.Quad)
 end
--- Мини-кнопку можно перетаскивать мышью или пальцем.
-local miniDragging = false
-local miniMoved = false
-local miniDragStart = nil
-local miniStartPosition = nil
-local miniDragInput = nil
-miniMenuButton.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1
-        or input.UserInputType == Enum.UserInputType.Touch then
-        miniDragging = true
-        miniMoved = false
-        miniDragStart = input.Position
-        miniStartPosition = miniMenuButton.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                miniDragging = false
-            end
-        end)
-    end
-end)
-miniMenuButton.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement
-        or input.UserInputType == Enum.UserInputType.Touch then
-        miniDragInput = input
-    end
-end)
-UserInputService.InputChanged:Connect(function(input)
-    if miniDragging and miniDragInput and input == miniDragInput
-        and miniDragStart and miniStartPosition then
-        local delta = input.Position - miniDragStart
-        if math.abs(delta.X) + math.abs(delta.Y) > 5 then miniMoved = true end
-        miniMenuButton.Position = UDim2.new(
-            miniStartPosition.X.Scale, miniStartPosition.X.Offset + delta.X,
-            miniStartPosition.Y.Scale, miniStartPosition.Y.Offset + delta.Y
-        )
-    end
-end)
+-- Мини-кнопка закреплена справа; нажатие открывает основное меню.
 miniMenuButton.Activated:Connect(function()
-    if not miniMoved then expandMenu() end
+    expandMenu()
 end)
 
 setOpen = function(open)
