@@ -24,7 +24,6 @@ local running = true
 local states = {
     coins = false, gears = false, piggy = false,
     speed = false, noclip = false, inf_jump = false, fly = false,
-    buy_basic = false, buy_heavy = false,
     buy_bouncy = false, buy_elemental = false, buy_unstable = false,
 }
 
@@ -212,8 +211,6 @@ UserInputService.JumpRequest:Connect(function()
 end)
 
 local capsules = {
-    { key = "buy_basic",     id = "basic"     },
-    { key = "buy_heavy",     id = "heavy"     },
     { key = "buy_bouncy",    id = "bouncy"    },
     { key = "buy_elemental", id = "elemental" },
     { key = "buy_unstable",  id = "unstable"  },
@@ -1185,7 +1182,7 @@ end)
 local miniMenuButton = create("TextButton", {
 	Name = "MiniMenu",
 	AnchorPoint = Vector2.new(0.5, 0.5),
-	Position = UDim2.new(1, -55, 0.5, 180),
+	Position = UDim2.new(1, -52, 0.5, 195),
 	Size = UDim2.fromOffset(78, 78),
 	BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 	BackgroundTransparency = 0,
@@ -1389,8 +1386,6 @@ end
 
 
 Section(pages[3], "АВТОПОКУПКА КАПСУЛ")
-Toggle(pages[3],"B","Basic Capsule","Автоматическая покупка Basic",states.buy_basic,function(v) states.buy_basic=v end)
-Toggle(pages[3],"H","Heavy Capsule","Автоматическая покупка Heavy",states.buy_heavy,function(v) states.buy_heavy=v end)
 Toggle(pages[3],"Y","Bouncy Capsule","Автоматическая покупка Bouncy",states.buy_bouncy,function(v) states.buy_bouncy=v end)
 Toggle(pages[3],"E","Elemental Capsule","Автоматическая покупка Elemental",states.buy_elemental,function(v) states.buy_elemental=v end)
 Toggle(pages[3],"U","Unstable Capsule","Автоматическая покупка Unstable",states.buy_unstable,function(v) states.buy_unstable=v end)
