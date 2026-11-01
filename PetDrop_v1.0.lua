@@ -1180,69 +1180,101 @@ reopenButton.MouseLeave:Connect(function()
 	tween(reopenButton, 0.12, { BackgroundTransparency = 0.08 })
 end)
 
--- Мини-меню в стиле игровых кнопок: яркий фон, толстая рамка и белая подпись.
+-- Постоянная мини-кнопка: отступ 170 px справа и 18 px сверху.
+-- Геометрический питомец, пастельные цвета и контур как у игровых иконок.
 local miniMenuButton = create("TextButton", {
 	Name = "MiniMenu",
-	AnchorPoint = Vector2.new(0.5, 0.5),
-	Position = UDim2.new(1, -52, 0.5, 195),
+	AnchorPoint = Vector2.new(1, 0),
+	Position = UDim2.new(1, -170, 0, 18),
 	Size = UDim2.fromOffset(78, 78),
 	BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 	BackgroundTransparency = 0,
 	BorderSizePixel = 0,
 	AutoButtonColor = false,
 	Text = "",
-	Visible = false,
+	Visible = true,
 	ClipsDescendants = false,
 	ZIndex = 30,
 	Parent = gui,
 }, {
 	corner(25),
 	create("UIStroke", {
-		Color = Color3.fromRGB(0, 0, 0), Thickness = 4,
+		Color = Color3.fromRGB(38, 27, 63), Thickness = 4,
 		ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 	}),
 	create("UIGradient", {
-		Rotation = 70,
+		Rotation = 90,
 		Color = ColorSequence.new({
-			ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 155, 225)),
-			ColorSequenceKeypoint.new(0.5, Color3.fromRGB(224, 113, 255)),
-			ColorSequenceKeypoint.new(1, Color3.fromRGB(151, 100, 255)),
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 172, 232)),
+			ColorSequenceKeypoint.new(0.5, Color3.fromRGB(216, 129, 250)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(143, 102, 236)),
 		}),
 	}),
 	create("Frame", {
-		Name = "Shine", Position = UDim2.fromOffset(12, 8),
-		Size = UDim2.fromOffset(43, 7), Rotation = -6,
+		Name = "Shine", Position = UDim2.fromOffset(12, 7),
+		Size = UDim2.fromOffset(42, 6), Rotation = -6,
 		BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-		BackgroundTransparency = 0.45, BorderSizePixel = 0, ZIndex = 32,
+		BackgroundTransparency = 0.35, BorderSizePixel = 0, ZIndex = 32,
 	}, { corner(4) }),
 	create("TextLabel", {
-		Name = "Monogram", AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.new(0.5, -1, 0.5, -5), Size = UDim2.fromOffset(65, 46),
-		BackgroundTransparency = 1, Text = "PD", Rotation = -9,
-		Font = Enum.Font.FredokaOne, TextSize = 38,
-		TextColor3 = Color3.fromRGB(255, 237, 118), ZIndex = 33,
+		Name = "Sparkle", Position = UDim2.fromOffset(57, 9),
+		Size = UDim2.fromOffset(17, 22), BackgroundTransparency = 1,
+		Text = "✦", Font = Enum.Font.FredokaOne, TextSize = 23,
+		TextColor3 = Color3.fromRGB(255, 239, 138), ZIndex = 36,
 	}, {
-		create("UIStroke", { Color = Color3.fromRGB(0, 0, 0), Thickness = 3, ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual }),
-	}),
-	create("TextLabel", {
-		Name = "Sparkle", Position = UDim2.fromOffset(53, 12),
-		Size = UDim2.fromOffset(18, 20), BackgroundTransparency = 1,
-		Text = "+", Font = Enum.Font.FredokaOne, TextSize = 24,
-		TextColor3 = Color3.fromRGB(255, 255, 255), ZIndex = 34,
-	}, {
-		create("UIStroke", { Color = Color3.fromRGB(0, 0, 0), Thickness = 1.5, ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual }),
+		create("UIStroke", { Color = Color3.fromRGB(38, 27, 63), Thickness = 1.5, ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual }),
 	}),
 	create("TextLabel", {
 		Name = "Caption", AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 1, 2), Size = UDim2.fromOffset(92, 27),
+		Position = UDim2.new(0.5, 0, 1, 3), Size = UDim2.fromOffset(92, 25),
 		BackgroundTransparency = 1, Text = "Pet Drop",
-		Font = Enum.Font.FredokaOne, TextSize = 21,
-		TextColor3 = Color3.fromRGB(255, 255, 255), ZIndex = 35,
+		Font = Enum.Font.FredokaOne, TextSize = 20,
+		TextColor3 = Color3.fromRGB(255, 255, 255), ZIndex = 38,
 	}, {
-		create("UIStroke", { Color = Color3.fromRGB(0, 0, 0), Thickness = 3, ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual }),
+		create("UIStroke", { Color = Color3.fromRGB(38, 27, 63), Thickness = 3, ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual }),
 	}),
 })
 do
+	local ink = Color3.fromRGB(38, 27, 63)
+	local mint = Color3.fromRGB(116, 255, 209)
+	local pet = create("Frame", {
+		Name = "PetIcon", Position = UDim2.fromOffset(15, 16),
+		Size = UDim2.fromOffset(48, 43), BackgroundTransparency = 1,
+		Rotation = -8, ZIndex = 33, Parent = miniMenuButton,
+	})
+	local function piece(name, x, y, w, h, color, radius, z, thickness)
+		local item = create("Frame", {
+			Name = name, Position = UDim2.fromOffset(x, y), Size = UDim2.fromOffset(w, h),
+			BackgroundColor3 = color, BorderSizePixel = 0, ZIndex = z, Parent = pet,
+		}, { corner(radius) })
+		if thickness then
+			create("UIStroke", { Color = ink, Thickness = thickness,
+				ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = item })
+		end
+		return item
+	end
+	local leftEar = piece("LeftEar", 3, 0, 16, 20, mint, 4, 33, 2.5)
+	leftEar.Rotation = -16
+	local rightEar = piece("RightEar", 29, 0, 16, 20, mint, 4, 33, 2.5)
+	rightEar.Rotation = 16
+	piece("LeftInnerEar", 7, 4, 7, 9, Color3.fromRGB(255, 172, 215), 3, 34)
+	piece("RightInnerEar", 34, 4, 7, 9, Color3.fromRGB(255, 172, 215), 3, 34)
+	local face = piece("Face", 0, 12, 48, 31, Color3.fromRGB(255, 255, 255), 11, 34, 2.5)
+	create("UIGradient", { Rotation = 90, Parent = face,
+		Color = ColorSequence.new(Color3.fromRGB(170, 255, 224), Color3.fromRGB(61, 210, 191)),
+	})
+	piece("LeftEye", 11, 22, 6, 9, ink, 3, 35)
+	piece("RightEye", 31, 22, 6, 9, ink, 3, 35)
+	piece("LeftEyeShine", 12, 23, 2, 3, WHITE, 1, 36)
+	piece("RightEyeShine", 32, 23, 2, 3, WHITE, 1, 36)
+	piece("LeftCheek", 5, 31, 8, 4, Color3.fromRGB(255, 160, 199), 2, 35)
+	piece("RightCheek", 35, 31, 8, 4, Color3.fromRGB(255, 160, 199), 2, 35)
+	piece("Nose", 22, 30, 4, 3, ink, 2, 35)
+	create("TextLabel", {
+		Name = "Smile", Position = UDim2.fromOffset(15, 30), Size = UDim2.fromOffset(18, 11),
+		BackgroundTransparency = 1, Text = "ᴗ", Font = Enum.Font.GothamBold,
+		TextSize = 13, TextColor3 = ink, ZIndex = 35, Parent = pet,
+	})
 	local miniScale = create("UIScale", { Scale = 1, Parent = miniMenuButton })
 	miniMenuButton.MouseEnter:Connect(function()
 		tween(miniScale, 0.12, { Scale = 1.06 })
@@ -1673,15 +1705,19 @@ end
 local function expandMenu()
 	if not isOpen or not isCollapsed then return end
 	isCollapsed = false
-	miniMenuButton.Visible = false
+	miniMenuButton.Visible = true
 	window.Visible = true
 	if blur and isOpen then tween(blur, 0.25, { Size = CONFIG.BlurSize }) end
 	uiScale.Scale = fit * 0.94
 	tween(uiScale, 0.2, { Scale = fit }, Enum.EasingStyle.Quad)
 end
--- Мини-кнопка закреплена справа; нажатие открывает основное меню.
+-- Мини-кнопка остаётся доступной и переключает основное меню.
 miniMenuButton.Activated:Connect(function()
-    expandMenu()
+    if isOpen and not isCollapsed then
+        collapseMenu()
+    else
+        setOpen(true)
+    end
 end)
 
 setOpen = function(open)
@@ -1691,7 +1727,7 @@ setOpen = function(open)
 	end
 	isOpen = open
 	isCollapsed = false
-	miniMenuButton.Visible = false
+	miniMenuButton.Visible = true
 	reopenButton.Visible = false
 
 	if open then
