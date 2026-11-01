@@ -1721,6 +1721,9 @@ miniMenuButton.Activated:Connect(function()
 end)
 
 setOpen = function(open)
+	-- Keep the launcher alive for every hide path, including the close button.
+	gui.Enabled = true
+	miniMenuButton.Visible = true
 	if open == isOpen then
 		if open and isCollapsed then expandMenu() end
 		return
@@ -1747,9 +1750,7 @@ setOpen = function(open)
 end
 
 close.Activated:Connect(function()
-	shutdownFeatures()
-	if blur then blur:Destroy() end
-	gui:Destroy()
+	setOpen(false)
 end)
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
