@@ -3442,17 +3442,22 @@ end
 -- Мини-кнопка остаётся доступной и переключает основное меню.
 
 miniMenuButton.Activated:Connect(function()
-
-    if isOpen and not isCollapsed then
-
-        collapseMenu()
-
-    else
-
-        setOpen(true)
-
+    -- Короткий эффект нажатия: кнопка слегка сжимается и отпружинивает.
+    local scale = miniMenuButton:FindFirstChildOfClass("UIScale")
+    if scale then
+        tween(scale, 0.08, { Scale = 0.90 }, Enum.EasingStyle.Quad)
+        task.delay(0.08, function()
+            if scale.Parent then
+                tween(scale, 0.18, { Scale = 1 }, Enum.EasingStyle.Back)
+            end
+        end)
     end
 
+    if isOpen and not isCollapsed then
+        collapseMenu()
+    else
+        setOpen(true)
+    end
 end)
 
 
