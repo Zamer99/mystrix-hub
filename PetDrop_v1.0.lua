@@ -1,16 +1,3 @@
---[[
-	MENU TEMPLATE — только визуал, без логики
-
-	Куда класть: LocalScript в StarterPlayer > StarterPlayerScripts
-	Открыть / закрыть: клавиша CONFIG.ToggleKey (по умолчанию RightShift) или кнопка ✕
-	Ассеты не нужны: всё собрано из Frame + UICorner / UIStroke / UIGradient.
-
-	Как добавлять элементы на страницу вкладки (pages[1], pages[2], ...):
-		Section(page, "Название секции")
-		Toggle(page, ICON.Bolt, "Заголовок", "Описание", true, function(state) end)
-		Dropdown(page, ICON.Cube, "Заголовок", "Описание", function(open) end)
-]]
-
 local Players          = game:GetService("Players")
 local TweenService     = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -259,7 +246,7 @@ end
 ----------------------------------------------------------------------
 local CONFIG = {
 	ToggleKey      = Enum.KeyCode.RightShift, -- открыть / закрыть меню
-	CollapseKey    = Enum.KeyCode.RightControl, -- свернуть / развернуть в мини-меню
+	CollapseKey    = Enum.KeyCode.LeftControl, -- свернуть / развернуть в мини-меню
 	StartOpen      = true,                    -- показывать меню при запуске
 	Size           = Vector2.new(760, 460),   -- размер окна (px)
 	SidebarWidth   = 208,                     -- ширина левой панели
