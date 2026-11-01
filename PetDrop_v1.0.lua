@@ -876,6 +876,8 @@ local gui = create("ScreenGui", {
 	Parent = player:WaitForChild("PlayerGui"),
 })
 
+gui:SetAttribute("MystrixReady", false)
+
 local uiScale = create("UIScale")
 
 local window = create("Frame", {
@@ -1731,4 +1733,15 @@ if CONFIG.StartOpen then
     setOpen(true)
 end
 
+-- MYSTRIX: expose the real menu state to the hub without running a second copy.
+local hubOpen = create("BindableFunction", { Name = "MystrixOpen", Parent = gui })
+hubOpen.OnInvoke = function()
+    if not gui.Parent then return false end
+    gui.Enabled = true
+    setOpen(true)
+    return window.Visible
+end
+gui:SetAttribute("MystrixReady", true)
+
 print("[PetDrop] Glass Monochrome v1.0 — Clean Labels + Theme Dropdown loaded.")
+
