@@ -1185,7 +1185,7 @@ end)
 local miniMenuButton = create("TextButton", {
 	Name = "MiniMenu",
 	AnchorPoint = Vector2.new(1, 0),
-	Position = UDim2.new(1, -170, 0, 18),
+	Position = UDim2.new(1, -15, 0, 860),
 	Size = UDim2.fromOffset(78, 78),
 	BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 	BackgroundTransparency = 0,
@@ -1781,4 +1781,3 @@ end
 gui:SetAttribute("MystrixReady", true)
 
 print("[PetDrop] Glass Monochrome v1.0 — Clean Labels + Theme Dropdown loaded.")
-
